@@ -1,6 +1,24 @@
-output "private_endpoints" {
-  description = <<DESCRIPTION
-  A map of the private endpoints created.
-  DESCRIPTION
-  value       = var.private_endpoints_manage_dns_zone_group ? azurerm_private_endpoint.this_managed_dns_zone_groups : azurerm_private_endpoint.this_unmanaged_dns_zone_groups
+output "name" {
+  description = "Name of the resource."
+  value       = azurerm_private_link_service.this.name
+}
+
+output "resource" {
+  description = "Output of the resource."
+  value       = azurerm_private_link_service.this
+}
+
+output "id" {
+  description = "ID of the resource"
+  value       = azurerm_private_link_service.this.id
+}
+
+output "alias" {
+  description = "The alias of the Private Link Service."
+  value       = azurerm_private_link_service.this.alias
+}
+
+output "nat_ip_configurations" {
+  description = "The NAT IP configurations used by this Private Link Service."
+  value       = var.nat_ip_configurations
 }
