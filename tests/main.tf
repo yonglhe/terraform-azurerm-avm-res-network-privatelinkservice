@@ -67,12 +67,14 @@ module "azurerm_private_link_service" {
   name                  = "${var.name_prefix}-private-link-service"
   resource_group_name   = azurerm_resource_group.this.name
   location              = azurerm_resource_group.this.location
-  # enable_proxy_protocol = false
+  enable_proxy_protocol = false
 
   load_balancer_frontend_ip_configuration_ids = [
     azurerm_lb.this.frontend_ip_configuration[0].id
     ]
 
+  visibility_subscription_ids = ["fa149c5d-7408-4687-8c05-0741bb84b780", "00000000-0000-0000-0000-000000000000"]
+  auto_approval_subscription_ids = ["fa149c5d-7408-4687-8c05-0741bb84b780", "00000000-0000-0000-0000-000000000000"]
 
   nat_ip_configurations = [
     {
@@ -83,25 +85,4 @@ module "azurerm_private_link_service" {
       private_ip_address         = "10.0.3.4"
     }
   ]
-}
-
-# Access outputs
-output "pls_resource_name" {
-  value = module.azurerm_private_link_service.name
-}
-
-output "pls_resource_output" {
-  value = module.azurerm_private_link_service.resource
-}
-
-output "pls_id" {
-  value = module.azurerm_private_link_service.id
-}
-
-output "pls_alias" {
-  value = module.azurerm_private_link_service.alias
-}
-
-output "pls_nat_ip_configs" {
-  value = module.azurerm_private_link_service.nat_ip_configurations
 }
