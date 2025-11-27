@@ -55,7 +55,7 @@ resource "azurerm_lb" "this" {
   sku                 = "Standard"
 
   frontend_ip_configuration {
-    name                 = "${var.name_prefix}-lb-frontend-ip"
+    name                          = "${var.name_prefix}-lb-frontend-ip"
     subnet_id                     = azurerm_subnet.lb_subnet.id
     private_ip_address_allocation = "Dynamic"
   }
@@ -72,9 +72,6 @@ module "azurerm_private_link_service" {
   load_balancer_frontend_ip_configuration_ids = [
     azurerm_lb.this.frontend_ip_configuration[0].id
     ]
-
-  visibility_subscription_ids = ["fa149c5d-7408-4687-8c05-0741bb84b780", "00000000-0000-0000-0000-000000000000"]
-  auto_approval_subscription_ids = ["fa149c5d-7408-4687-8c05-0741bb84b780", "00000000-0000-0000-0000-000000000000"]
 
   nat_ip_configurations = [
     {

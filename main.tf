@@ -2,10 +2,8 @@ resource "azurerm_private_link_service" "this" {
   name                    = var.name
   location                = var.location
   resource_group_name     = var.resource_group_name
-
-  enable_proxy_protocol = var.enable_proxy_protocol
-  tags     = var.tags
-
+  enable_proxy_protocol   = var.enable_proxy_protocol
+  tags                    = var.tags
 
   dynamic nat_ip_configuration {
     for_each = var.nat_ip_configurations

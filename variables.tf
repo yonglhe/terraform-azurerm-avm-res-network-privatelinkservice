@@ -58,7 +58,10 @@ DESCRIPTION
 }
 
 variable "load_balancer_frontend_ip_configuration_ids" {
-  description = "A list of one or more Load Balancer Frontend IP Configuration IDs associated with the Private Link Service."
+  description = <<-DESCRIPTION
+  (Optional) DEPRICATED, A list of one or more Load Balancer Frontend IP Configuration IDs associated with the Private Link Service.
+  The Load Balancer Frontend IP Configurations now only accepts ONE ID associated with the Private Link Service."
+DESCRIPTION
   type        = list(string)
   default     = []
 }
@@ -70,13 +73,13 @@ variable "enable_proxy_protocol" {
 }
 
 variable "auto_approval_subscription_ids" {
-  description = "A list of subscription IDs that will be automatically approved to connect to the Private Link Service."
+  description = "(Optional) A list of subscription IDs that will be automatically approved to connect to the Private Link Service."
   type        = list(string)
   default     = []
 }
 
 variable "visibility_subscription_ids" {
-  description = "A list of subscription IDs that have visibility to the Private Link Service"
+  description = "(Optional) A list of subscription IDs that have visibility to the Private Link Service"
   type        = list(string)
   default     = []
 }
