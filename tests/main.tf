@@ -62,7 +62,7 @@ resource "azurerm_lb" "this" {
 }
 
 module "azurerm_private_link_service" {
-  source = "/mnt/c/Users/yhe/terraform-azure/core/core-terraform-azurerm-avm-res-network-privatelinkservice/"
+  source = "../terraform-azurerm-avm-res-network-privatelinkservice/"
 
   name                  = "${var.name_prefix}-private-link-service"
   resource_group_name   = azurerm_resource_group.this.name
