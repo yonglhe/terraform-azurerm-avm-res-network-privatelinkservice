@@ -57,13 +57,71 @@ This includes the following properties:
 DESCRIPTION
 }
 
+variable "load_balancer_frontend_ip_configs" {
+  type = list(object({
+    name                 = string
+    subnet_id            = optional(string)
+    private_ip_address   = optional(string)
+    public_ip_address_id = optional(string)
+  }))
+  default = []
+  validation {
+  condition = (
+    # Option 1: existing LB + its frontend IDs
+    (
+      var.existing_load_balancer_id != null &&
+      length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
+    )
+    ||
+    # Option 2: module-created LB configs
+    (
+      length(var.load_balancer_frontend_ip_configs) > 0
+    )
+    ||
+    # Option 3: deprecated explicit frontend ID list
+    (
+      length(var.load_balancer_frontend_ip_configuration_ids) > 0
+    )
+  )
+  error_message = <<-EOF
+  (Required) You must provide one of the following:
+    1. existing_load_balancer_id AND existing_load_balancer_frontend_ip_configuration_ids, OR
+    2. load_balancer_frontend_ip_configs for a module-created load balancer, OR
+    3. load_balancer_frontend_ip_configuration_ids (deprecated).
+  A Private Link Service requires exactly one load balancer frontend IP configuration in all Terraform-supported scenarios.
+  EOF
+
+  # validation {
+  #   condition     = var.destination_ip_address != null || var.existing_load_balancer_id != null || length(var.load_balancer_frontend_ip_configs) > 0 || length(var.load_balancer_frontend_ip_configuration_ids) > 0
+  #   error_message = "You must specify destination_ip_address (Direct Connect), or existing LB IDs, or LB frontend configs for module-created LB."
+  # }
+  }
+}
+
+variable "existing_load_balancer_id" {
+  type        = string
+  default     = null
+  description = "ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs."
+}
+
+variable "existing_load_balancer_frontend_ip_configuration_ids" {
+  type        = list(string)
+  default     = []
+  description = "Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id."
+
+  validation {
+    condition     = var.existing_load_balancer_id == null || length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
+    error_message = "If existing_load_balancer_id is provided, you must provide its frontend IP configuration IDs."
+  }
+}
+
 variable "load_balancer_frontend_ip_configuration_ids" {
+  type        = list(string)
+  default     = []
   description = <<-DESCRIPTION
   (Optional) DEPRICATED, A list of one or more Load Balancer Frontend IP Configuration IDs associated with the Private Link Service.
   The Load Balancer Frontend IP Configurations now only accepts ONE ID associated with the Private Link Service."
-DESCRIPTION
-  type        = list(string)
-  default     = []
+  DESCRIPTION
 }
 
 variable "enable_proxy_protocol" {

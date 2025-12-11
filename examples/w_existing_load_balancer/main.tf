@@ -55,34 +55,12 @@ resource "azurerm_virtual_network" "this" {
 }
 
 # This is required for resource modules
-resource "azurerm_subnet" "pls" {
+resource "azurerm_subnet" "this" {
   address_prefixes     = ["10.0.1.0/24"]
   name                 = module.naming.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
-}
-
-# This is required for resource modules
-resource "azurerm_subnet" "lb" {
-  address_prefixes     = ["10.0.2.0/24"]
-  name                 = module.naming.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
-}
-
-# This is required for resource modules
-resource "azurerm_lb" "this" {
-  name                = module.naming.lb.name_unique
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.lb.id
-    private_ip_address_allocation = "Dynamic"
-  }
 }
 
 # This is the module call
@@ -93,14 +71,13 @@ module "azurerm_private_link_service" {
   name                  = module.naming.private_link_service.name_unique
   resource_group_name   = azurerm_resource_group.this.name
 
-  load_balancer_frontend_ip_configuration_ids = [
-    azurerm_lb.this.frontend_ip_configuration[0].id
-  ]
+  existing_load_balancer_id = module.avm-res-network-loadbalancer.resource.id
+  existing_load_balancer_frontend_ip_configuration_ids = [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
 
   nat_ip_configurations = [
     {
       name                       = "Primary"
-      subnet_id                  = azurerm_subnet.pls.id
+      subnet_id                  = azurerm_subnet.this.id
       primary                    = true
       private_ip_address_version = "IPv4"
     }

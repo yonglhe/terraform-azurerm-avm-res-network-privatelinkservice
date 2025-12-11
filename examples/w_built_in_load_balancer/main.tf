@@ -54,7 +54,7 @@ resource "azurerm_virtual_network" "this" {
   address_space       = ["10.0.0.0/16"]
 }
 
-# This is required for resource modules
+# This is required for resource modules (subnet for Private Link Service)
 resource "azurerm_subnet" "pls" {
   address_prefixes     = ["10.0.1.0/24"]
   name                 = module.naming.subnet.name_unique
@@ -63,26 +63,12 @@ resource "azurerm_subnet" "pls" {
   private_link_service_network_policies_enabled = false
 }
 
-# This is required for resource modules
+# This is required for resource modules (subnet for Standard Load Balancer)
 resource "azurerm_subnet" "lb" {
   address_prefixes     = ["10.0.2.0/24"]
   name                 = module.naming.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
-}
-
-# This is required for resource modules
-resource "azurerm_lb" "this" {
-  name                = module.naming.lb.name_unique
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.lb.id
-    private_ip_address_allocation = "Dynamic"
-  }
 }
 
 # This is the module call
@@ -93,8 +79,11 @@ module "azurerm_private_link_service" {
   name                  = module.naming.private_link_service.name_unique
   resource_group_name   = azurerm_resource_group.this.name
 
-  load_balancer_frontend_ip_configuration_ids = [
-    azurerm_lb.this.frontend_ip_configuration[0].id
+  load_balancer_frontend_ip_configs = [
+    {
+      name     = "myFrontend"
+      subnet_id = azurerm_subnet.lb.id
+    }
   ]
 
   nat_ip_configurations = [

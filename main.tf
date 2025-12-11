@@ -1,3 +1,22 @@
+resource "azurerm_lb" "this" {
+  count               = local.create_lb ? 1 : 0
+  name                = "${var.name}-lb"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
+
+  dynamic "frontend_ip_configuration" {
+    for_each = local.create_lb ? var.load_balancer_frontend_ip_configs : []
+    content {
+      name                 = frontend_ip_configuration.value.name
+      subnet_id            = frontend_ip_configuration.value.subnet_id
+      private_ip_address   = frontend_ip_configuration.value.private_ip_address
+      public_ip_address_id = frontend_ip_configuration.value.public_ip_address_id
+    }
+  }
+  tags = var.tags
+}
+
 resource "azurerm_private_link_service" "this" {
   name                    = var.name
   location                = var.location
@@ -15,9 +34,11 @@ resource "azurerm_private_link_service" "this" {
       private_ip_address_version    = nat_ip_configuration.value.private_ip_address_version
     }
   }
-  load_balancer_frontend_ip_configuration_ids = var.load_balancer_frontend_ip_configuration_ids
-  auto_approval_subscription_ids = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
-  visibility_subscription_ids = var.visibility_subscription_ids != null ? var.visibility_subscription_ids : null
+    # Final, validated LB frontend IDs
+  load_balancer_frontend_ip_configuration_ids = local.frontend_ids
+
+  auto_approval_subscription_ids    = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
+  visibility_subscription_ids       = var.visibility_subscription_ids != null ? var.visibility_subscription_ids : null
 }
 
 resource "azurerm_management_lock" "this" {
