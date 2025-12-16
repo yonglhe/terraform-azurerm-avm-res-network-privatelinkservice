@@ -40,8 +40,6 @@ variable "nat_ip_configurations" {
     private_ip_address_version    = optional(string, null)
   }))
 
-  default = null
-
   validation {
     condition     = length(var.nat_ip_configurations) <= 8
     error_message = "You can create a maximum of 8 NAT IP configurations."
@@ -85,29 +83,32 @@ variable "load_balancer_frontend_ip_configs" {
   )
   error_message = <<-EOF
   (Required) You must provide one of the following:
-    1. existing_load_balancer_id AND existing_load_balancer_frontend_ip_configuration_ids, OR
-    2. load_balancer_frontend_ip_configs for a module-created load balancer, OR
-    3. load_balancer_frontend_ip_configuration_ids (deprecated).
+    1. (for existing load balancer)                         existing_load_balancer_id & existing_load_balancer_frontend_ip_configuration_ids
+    2. (for creating the load balancer inside the module)   load_balancer_frontend_ip_configs for a module-created load balancer
+    3. (for creating the load balancer outside the module)  load_balancer_frontend_ip_configuration_ids.
   A Private Link Service requires exactly one load balancer frontend IP configuration in all Terraform-supported scenarios.
   EOF
-
-  # validation {
-  #   condition     = var.destination_ip_address != null || var.existing_load_balancer_id != null || length(var.load_balancer_frontend_ip_configs) > 0 || length(var.load_balancer_frontend_ip_configuration_ids) > 0
-  #   error_message = "You must specify destination_ip_address (Direct Connect), or existing LB IDs, or LB frontend configs for module-created LB."
-  # }
   }
+  description = "(Optional) To deploy the Standard Load balancer together with Private Link Service inside the module."
 }
 
 variable "existing_load_balancer_id" {
   type        = string
   default     = null
-  description = "ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs."
+  description = <<-DESCRIPTION
+(Optional) ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs.
+*(for existing load balancer) - existing_load_balancer_id & existing_load_balancer_frontend_ip_configuration_ids
+DESCRIPTION
 }
 
 variable "existing_load_balancer_frontend_ip_configuration_ids" {
   type        = list(string)
   default     = []
-  description = "Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id."
+ # description = ""
+  description = <<-DESCRIPTION
+(Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id.
+*(for creating the load balancer inside the module) - load_balancer_frontend_ip_configs for a module-created load balancer
+DESCRIPTION
 
   validation {
     condition     = var.existing_load_balancer_id == null || length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
@@ -119,9 +120,9 @@ variable "load_balancer_frontend_ip_configuration_ids" {
   type        = list(string)
   default     = []
   description = <<-DESCRIPTION
-  (Optional) DEPRICATED, A list of one or more Load Balancer Frontend IP Configuration IDs associated with the Private Link Service.
-  The Load Balancer Frontend IP Configurations now only accepts ONE ID associated with the Private Link Service."
-  DESCRIPTION
+(Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported). The variable type is still a list but it only accepts one.
+*(for creating the load balancer outside the module) - load_balancer_frontend_ip_configuration_ids.
+DESCRIPTION
 }
 
 variable "enable_proxy_protocol" {

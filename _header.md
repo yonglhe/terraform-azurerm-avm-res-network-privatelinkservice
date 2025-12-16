@@ -1,3 +1,3 @@
-# terraform-azurerm-avm-template
+# terraform-azurerm-avm-privatelinkservice
 
-This is a template repo for Terraform Azure Verified Modules.
+Module to deploy a Private Link Service in Terraform

@@ -23,6 +23,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azurerm_lb.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/lb) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_private_link_service.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_link_service) (resource)
@@ -48,6 +49,28 @@ Type: `string`
 Description: (Required) The name of this resource
 
 Type: `string`
+
+### <a name="input_nat_ip_configurations"></a> [nat\_ip\_configurations](#input\_nat\_ip\_configurations)
+
+Description: (Required) List of NAT IP configuration blocks for the Private Link Service.  
+This includes the following properties:
+- name - (Required)The name for the NAT IP configuration.
+- private\_ip\_address - (Optional)The private static IP address for this configuration.
+- private\_ip\_address\_version - (Optional) The version of the private static IP address.
+- subnet\_id - (Required) The ID of the subnet for the private link service.
+- primary - (Required) Set this IP configurations as primary, changing this foces a new resource to be created.
+
+Type:
+
+```hcl
+list(object({
+    name                          = string
+    subnet_id                     = string
+    primary                       = bool
+    private_ip_address            = optional(string, null)
+    private_ip_address_version    = optional(string, null)
+  }))
+```
 
 ### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
 
@@ -111,18 +134,51 @@ Default: `false`
 
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
-Description: This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
 If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
 Default: `true`
 
+### <a name="input_existing_load_balancer_frontend_ip_configuration_ids"></a> [existing\_load\_balancer\_frontend\_ip\_configuration\_ids](#input\_existing\_load\_balancer\_frontend\_ip\_configuration\_ids)
+
+Description: Frontend IP configuration IDs belonging to the existing load balancer provided in existing\_load\_balancer\_id.
+
+Type: `list(string)`
+
+Default: `[]`
+
+### <a name="input_existing_load_balancer_id"></a> [existing\_load\_balancer\_id](#input\_existing\_load\_balancer\_id)
+
+Description: ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_load_balancer_frontend_ip_configs"></a> [load\_balancer\_frontend\_ip\_configs](#input\_load\_balancer\_frontend\_ip\_configs)
+
+Description: (Optional) To deploy the Standard Load balancer together with Private Link Service inside the module.
+
+Type:
+
+```hcl
+list(object({
+    name                 = string
+    subnet_id            = optional(string)
+    private_ip_address   = optional(string)
+    public_ip_address_id = optional(string)
+  }))
+```
+
+Default: `[]`
+
 ### <a name="input_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#input\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
-Description: (Optional) DEPRICATED, A list of one or more Load Balancer Frontend IP Configuration IDs associated with the Private Link Service.
-The Load Balancer Frontend IP Configurations now only accepts ONE ID associated with the Private Link Service."
+Description: (Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported).  
+The variable type is still a list but it only accepts one."
 
 Type: `list(string)`
 
@@ -142,30 +198,6 @@ object({
     kind = string
     name = optional(string, null)
   })
-```
-
-Default: `null`
-
-### <a name="input_nat_ip_configurations"></a> [nat\_ip\_configurations](#input\_nat\_ip\_configurations)
-
-Description: (Required) List of NAT IP configuration blocks for the Private Link Service.
-This includes the following properties:
-- name - (Required)The name for the NAT IP configuration.
-- private\_ip\_address - (Optional)The private static IP address for this configuration.
-- private\_ip\_address\_version - (Optional) The version of the private static IP address.
-- subnet\_id - (Required) The ID of the subnet for the private link service.
-- primary - (Required) Set this IP configurations as primary, changing this foces a new resource to be created.
-
-Type:
-
-```hcl
-list(object({
-    name                          = string
-    subnet_id                     = string
-    primary                       = bool
-    private_ip_address            = optional(string, null)
-    private_ip_address_version    = optional(string, null)
-  }))
 ```
 
 Default: `null`
@@ -249,6 +281,14 @@ Description: The list of subscription IDs that have auto approval to the Private
 ### <a name="output_id"></a> [id](#output\_id)
 
 Description: ID of the resource
+
+### <a name="output_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#output\_load\_balancer\_frontend\_ip\_configuration\_ids)
+
+Description: The frontend IP configuration IDs used by the Private Link Service.
+
+### <a name="output_load_balancer_id"></a> [load\_balancer\_id](#output\_load\_balancer\_id)
+
+Description: The ID of the module-created Standard Load Balancer (if created). Null if using an existing LB.
 
 ### <a name="output_name"></a> [name](#output\_name)
 
