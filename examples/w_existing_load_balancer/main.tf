@@ -40,6 +40,20 @@ module "naming" {
   version = "~> 0.4.2"
 }
 
+# Naming module specifically for the "pls" subnet
+module "naming_pls_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["pls"] # <-- This makes the name unique
+}
+
+# Naming module specifically for the "lb" subnet
+module "naming_lb_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["lb"]  # <-- This makes the name unique
+}
+
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
@@ -54,10 +68,10 @@ resource "azurerm_virtual_network" "this" {
   address_space       = ["10.0.0.0/16"]
 }
 
-# This is required for resource modules
-resource "azurerm_subnet" "this" {
+# This is required for resource modules (subnet for Private Link Service)
+resource "azurerm_subnet" "pls" {
   address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming.subnet.name_unique
+  name                 = module.naming_pls_subnet.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
@@ -71,6 +85,7 @@ module "azurerm_private_link_service" {
   name                  = module.naming.private_link_service.name_unique
   resource_group_name   = azurerm_resource_group.this.name
 
+  # Optional: add the [Load Balancer resource ID/Frontend IP configuraion ID]-link from the Azure Portal
   existing_load_balancer_id = module.avm-res-network-loadbalancer.resource.id
   existing_load_balancer_frontend_ip_configuration_ids = [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
 
@@ -82,5 +97,5 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  enable_telemetry = var.enable_telemetry
+  depends_on = [azurerm_lb.this]
 }

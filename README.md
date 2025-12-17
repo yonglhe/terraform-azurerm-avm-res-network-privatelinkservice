@@ -4,6 +4,39 @@
 
 Module to deploy a Private Link Service in Terraform
 
+## Load Balancer Requirement
+
+A Private Link Service **requires** a Standard Load Balancer frontend IP configuration. This module supports the following mutually exclusive options (exactly **one** option must be used.):
+
+#### Option 1 – Resource Load Balancer (Default)
+Description: The module will attach the created separate Standard Load Balancer
+- Provide `load_balancer_frontend_ip_configuration_ids` directly.
+
+Type: `list(string)`
+
+#### Option 2 – Module-created built-in Load Balancer (Recommended)
+Description: The module will create a Standard Load Balancer and attach it to the Private Link Service.
+- Provide `load_balancer_frontend_ip_configs`.
+
+Type:
+
+```hcl
+list(object({
+    name                 = string
+    subnet_id            = optional(string)
+    private_ip_address   = optional(string)
+    public_ip_address_id = optional(string)
+  }))
+```
+
+#### Option 3 – Existing Load Balancer
+Description: The module will attach the Private Link Service to the existing Load Balancer.
+Provide:
+- `existing_load_balancer_id`
+Type: `string`
+- `existing_load_balancer_frontend_ip_configuration_ids`
+Type: `list(string)`
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -144,7 +177,8 @@ Default: `true`
 
 ### <a name="input_existing_load_balancer_frontend_ip_configuration_ids"></a> [existing\_load\_balancer\_frontend\_ip\_configuration\_ids](#input\_existing\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
-Description: Frontend IP configuration IDs belonging to the existing load balancer provided in existing\_load\_balancer\_id.
+Description: (Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing\_load\_balancer\_id.
+*(for creating the load balancer inside the module) - load\_balancer\_frontend\_ip\_configs for a module-created load balancer
 
 Type: `list(string)`
 
@@ -152,7 +186,8 @@ Default: `[]`
 
 ### <a name="input_existing_load_balancer_id"></a> [existing\_load\_balancer\_id](#input\_existing\_load\_balancer\_id)
 
-Description: ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs.
+Description: (Optional) ID of an existing Standard Load Balancer. If provided, you must also provide its frontend IP configuration IDs.
+*(for existing load balancer) - existing\_load\_balancer\_id & existing\_load\_balancer\_frontend\_ip\_configuration\_ids
 
 Type: `string`
 
@@ -177,8 +212,8 @@ Default: `[]`
 
 ### <a name="input_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#input\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
-Description: (Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported).  
-The variable type is still a list but it only accepts one."
+Description: (Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported). The variable type is still a list but it only accepts one.
+*(for creating the load balancer outside the module) - load\_balancer\_frontend\_ip\_configuration\_ids.
 
 Type: `list(string)`
 

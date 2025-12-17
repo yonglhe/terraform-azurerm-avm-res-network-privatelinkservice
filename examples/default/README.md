@@ -47,6 +47,19 @@ module "naming" {
   version = "~> 0.4.2"
 }
 
+module "naming_pls_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["pls"] # <-- This makes the name unique
+}
+
+# Naming module specifically for the "lb" subnet
+module "naming_lb_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["lb"]  # <-- This makes the name unique
+}
+
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
@@ -64,7 +77,7 @@ resource "azurerm_virtual_network" "this" {
 # This is required for resource modules
 resource "azurerm_subnet" "pls" {
   address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming.subnet.name_unique
+  name                 = module.naming_pls_subnet.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
@@ -73,7 +86,7 @@ resource "azurerm_subnet" "pls" {
 # This is required for resource modules
 resource "azurerm_subnet" "lb" {
   address_prefixes     = ["10.0.2.0/24"]
-  name                 = module.naming.subnet.name_unique
+  name                 = module.naming_lb_subnet.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
 }
@@ -112,7 +125,6 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  enable_telemetry = var.enable_telemetry
 }
 ```
 
@@ -147,17 +159,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
-
-Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see <https://aka.ms/avm/telemetryinfo>.  
-If it is set to false, then no telemetry will be collected.
-
-Type: `bool`
-
-Default: `true`
+No optional inputs.
 
 ## Outputs
 
@@ -174,6 +176,18 @@ Source: ../..
 Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: ~> 0.4.2
+
+### <a name="module_naming_lb_subnet"></a> [naming\_lb\_subnet](#module\_naming\_lb\_subnet)
+
+Source: Azure/naming/azurerm
+
+Version: ~> 0.4.2
+
+### <a name="module_naming_pls_subnet"></a> [naming\_pls\_subnet](#module\_naming\_pls\_subnet)
 
 Source: Azure/naming/azurerm
 

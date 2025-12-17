@@ -40,6 +40,19 @@ module "naming" {
   version = "~> 0.4.2"
 }
 
+module "naming_pls_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["pls"] # <-- This makes the name unique
+}
+
+# Naming module specifically for the "lb" subnet
+module "naming_lb_subnet" {
+  source  = "Azure/naming/azurerm"
+  version = "~> 0.4.2"
+  prefix  = ["lb"]  # <-- This makes the name unique
+}
+
 # This is required for resource modules
 resource "azurerm_resource_group" "this" {
   location = module.regions.regions[random_integer.region_index.result].name
@@ -57,7 +70,7 @@ resource "azurerm_virtual_network" "this" {
 # This is required for resource modules
 resource "azurerm_subnet" "pls" {
   address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming.subnet.name_unique
+  name                 = module.naming_pls_subnet.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
@@ -66,7 +79,7 @@ resource "azurerm_subnet" "pls" {
 # This is required for resource modules
 resource "azurerm_subnet" "lb" {
   address_prefixes     = ["10.0.2.0/24"]
-  name                 = module.naming.subnet.name_unique
+  name                 = module.naming_lb_subnet.subnet.name_unique
   resource_group_name  = azurerm_resource_group.this.name
   virtual_network_name = azurerm_virtual_network.this.name
 }
@@ -105,5 +118,4 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  enable_telemetry = var.enable_telemetry
 }
