@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 5.0.0"
     }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3.0, < 4.0.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
@@ -25,7 +21,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.3.0"
+  version = "0.3.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -37,7 +33,7 @@ resource "random_integer" "region_index" {
 # Naming module specifically for the "pls" subnet
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 
   prefix = ["pls"] # <-- This makes the name unique
 }
@@ -45,7 +41,7 @@ module "naming_pls_subnet" {
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 
   prefix = ["lb"] # <-- This makes the name unique
 }
@@ -53,7 +49,7 @@ module "naming_lb_subnet" {
 # Naming module specifically for the "lb" subnet
 module "naming_pe_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 
   prefix = ["pe"] # <-- This makes the name unique
 }
@@ -61,7 +57,7 @@ module "naming_pe_subnet" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 }
 
 # This is required for resource modules
@@ -132,7 +128,7 @@ resource "azurerm_private_endpoint" "this" {
   }
 }
 
-module "avm-res-network-privatednszone" {
+module "avm_res_network_privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
   version = "0.4.3"
 
