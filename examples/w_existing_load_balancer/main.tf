@@ -89,8 +89,8 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  resource_group_name                                  = azurerm_resource_group.this.name
-  existing_load_balancer_frontend_ip_configuration_ids = [""]   # [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
+  resource_group_name = azurerm_resource_group.this.name
   # Optional: add the [Load Balancer resource ID/Frontend IP configuraion ID]-link from the Azure Portal
-  existing_load_balancer_id = "" # module.avm-res-network-loadbalancer.resource.id
+  existing_load_balancer_frontend_ip_configuration_ids = [""] # Frontend IP configuration resource ID
+  existing_load_balancer_id                            = ""   # Load Balancer Resource ID
 }
