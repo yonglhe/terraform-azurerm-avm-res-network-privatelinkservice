@@ -1,7 +1,0 @@
-The example for 'w_existing_load_balancer' is excluded from end-to-end testing.
-
-Reason:
-- Requires an existing Standard Load Balancer and frontend IP configuration
-- The inputvalue for the existing Standard Load Balancer and frontend IP configuration resource id URL
-- Cannot be reliably provisioned in automated CI pipelines
-- Intended as a reference example only
