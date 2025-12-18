@@ -82,6 +82,31 @@ resource "azurerm_subnet" "this" {
   private_link_service_network_policies_enabled = false
 }
 
+# NOTE:
+# The following resources are used for end-to-end testing only.
+# The referenced Standard Load Balancer resource is created as the default examples
+# Terraform configuration to allow deterministic CI testing.
+resource "azurerm_subnet" "lb" {
+  address_prefixes     = ["10.0.2.0/24"]
+  name                 = module.naming_lb_subnet.subnet.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
+}
+
+resource "azurerm_lb" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.lb.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                          = "internal"
+    private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.lb.id
+  }
+}
+# END OF NOTE
+
 # This is the module call
 module "azurerm_private_link_service" {
   source = "../.."
@@ -96,10 +121,11 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  resource_group_name                                  = azurerm_resource_group.this.name
-  existing_load_balancer_frontend_ip_configuration_ids = compact([try(module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id, null)]) # Frontend IP configuration resource ID
-  # Add the [Load Balancer resource ID/Frontend IP configuraion ID]-link from the Azure Portal
-  existing_load_balancer_id = module.avm-res-network-loadbalancer.resource.id # Load Balancer Resource ID
+  resource_group_name = azurerm_resource_group.this.name
+  # Add the Load Balancer resource ID and Frontend IP configuraion ID -URL from the Azure Portal
+  # For Example: /subscriptions/../resourceGroups/../providers/Microsoft.Network/loadBalancers/..
+  existing_load_balancer_frontend_ip_configuration_ids = [azurerm_lb.this.frontend_ip_configuration[0].id] # Replace with Frontend IP configuration Resource ID
+  existing_load_balancer_id                            = azurerm_lb.this.id                                # Replace with Load Balancer Resource ID
 }
 ```
 
@@ -118,7 +144,9 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azurerm_lb.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/lb) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.lb](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
