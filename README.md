@@ -313,10 +313,6 @@ Description: The alias of the Private Link Service.
 
 Description: The list of subscription IDs that have auto approval to the Private Link Service.
 
-### <a name="output_id"></a> [id](#output\_id)
-
-Description: ID of the resource
-
 ### <a name="output_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#output\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
 Description: The frontend IP configuration IDs used by the Private Link Service.
@@ -336,6 +332,10 @@ Description: The NAT IP configurations used by this Private Link Service.
 ### <a name="output_resource"></a> [resource](#output\_resource)
 
 Description: Output of the resource.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: ID of the resource
 
 ### <a name="output_visibility_subscription_ids"></a> [visibility\_subscription\_ids](#output\_visibility\_subscription\_ids)
 

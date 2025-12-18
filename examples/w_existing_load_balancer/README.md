@@ -13,10 +13,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 5.0.0"
     }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3.0, < 4.0.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
@@ -32,7 +28,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.3.0"
+  version = "0.3.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -44,13 +40,13 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 }
 
 # Naming module specifically for the "pls" subnet
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 
   prefix = ["pls"] # <-- This makes the name unique
 }
@@ -58,7 +54,7 @@ module "naming_pls_subnet" {
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 
   prefix = ["lb"] # <-- This makes the name unique
 }
@@ -118,8 +114,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 5.0.0)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3.0, < 4.0.0)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
 ## Resources
@@ -158,25 +152,25 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_naming_lb_subnet"></a> [naming\_lb\_subnet](#module\_naming\_lb\_subnet)
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_naming_pls_subnet"></a> [naming\_pls\_subnet](#module\_naming\_pls\_subnet)
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: ~> 0.3.0
+Version: 0.3.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
