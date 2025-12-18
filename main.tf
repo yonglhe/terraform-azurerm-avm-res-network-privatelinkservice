@@ -20,13 +20,13 @@ resource "azurerm_lb" "this" {
 }
 
 resource "azurerm_private_link_service" "this" {
+  location                       = var.location
+  name                           = var.name
+  resource_group_name            = var.resource_group_name
+  auto_approval_subscription_ids = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
+  enable_proxy_protocol          = var.enable_proxy_protocol
   # Final, validated LB frontend IDs
   load_balancer_frontend_ip_configuration_ids = local.frontend_ids
-  location                                    = var.location
-  name                                        = var.name
-  resource_group_name                         = var.resource_group_name
-  auto_approval_subscription_ids              = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
-  enable_proxy_protocol                       = var.enable_proxy_protocol
   tags                                        = var.tags
   visibility_subscription_ids                 = var.visibility_subscription_ids != null ? var.visibility_subscription_ids : null
 

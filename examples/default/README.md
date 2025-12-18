@@ -50,14 +50,16 @@ module "naming" {
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4.2"
-  prefix  = ["pls"] # <-- This makes the name unique
+
+  prefix = ["pls"] # <-- This makes the name unique
 }
 
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4.2"
-  prefix  = ["lb"]  # <-- This makes the name unique
+
+  prefix = ["lb"] # <-- This makes the name unique
 }
 
 # This is required for resource modules
@@ -76,10 +78,10 @@ resource "azurerm_virtual_network" "this" {
 
 # This is required for resource modules
 resource "azurerm_subnet" "pls" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming_pls_subnet.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes                              = ["10.0.1.0/24"]
+  name                                          = module.naming_pls_subnet.subnet.name_unique
+  resource_group_name                           = azurerm_resource_group.this.name
+  virtual_network_name                          = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
 }
 
@@ -93,15 +95,15 @@ resource "azurerm_subnet" "lb" {
 
 # This is required for resource modules
 resource "azurerm_lb" "this" {
-  name                = module.naming.lb.name_unique
   location            = azurerm_resource_group.this.location
+  name                = module.naming.lb.name_unique
   resource_group_name = azurerm_resource_group.this.name
   sku                 = "Standard"
 
   frontend_ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.lb.id
     private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.lb.id
   }
 }
 
@@ -109,14 +111,8 @@ resource "azurerm_lb" "this" {
 module "azurerm_private_link_service" {
   source = "../.."
 
-  location              = azurerm_resource_group.this.location
-  name                  = module.naming.private_link_service.name_unique
-  resource_group_name   = azurerm_resource_group.this.name
-
-  load_balancer_frontend_ip_configuration_ids = [
-    azurerm_lb.this.frontend_ip_configuration[0].id
-  ]
-
+  location = azurerm_resource_group.this.location
+  name     = module.naming.private_link_service.name_unique
   nat_ip_configurations = [
     {
       name                       = "Primary"
@@ -124,6 +120,10 @@ module "azurerm_private_link_service" {
       primary                    = true
       private_ip_address_version = "IPv4"
     }
+  ]
+  resource_group_name = azurerm_resource_group.this.name
+  load_balancer_frontend_ip_configuration_ids = [
+    azurerm_lb.this.frontend_ip_configuration[0].id
   ]
 }
 ```

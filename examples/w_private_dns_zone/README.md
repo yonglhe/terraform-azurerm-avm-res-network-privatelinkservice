@@ -45,21 +45,24 @@ resource "random_integer" "region_index" {
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4.2"
-  prefix  = ["pls"] # <-- This makes the name unique
+
+  prefix = ["pls"] # <-- This makes the name unique
 }
 
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4.2"
-  prefix  = ["lb"]  # <-- This makes the name unique
+
+  prefix = ["lb"] # <-- This makes the name unique
 }
 
 # Naming module specifically for the "lb" subnet
 module "naming_pe_subnet" {
   source  = "Azure/naming/azurerm"
   version = "~> 0.4.2"
-  prefix  = ["pe"]  # <-- This makes the name unique
+
+  prefix = ["pe"] # <-- This makes the name unique
 }
 
 # This ensures we have unique CAF compliant names for our resources.
@@ -84,10 +87,10 @@ resource "azurerm_virtual_network" "this" {
 
 # This is required for resource modules
 resource "azurerm_subnet" "pls" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming_pls_subnet.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes                              = ["10.0.1.0/24"]
+  name                                          = module.naming_pls_subnet.subnet.name_unique
+  resource_group_name                           = azurerm_resource_group.this.name
+  virtual_network_name                          = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
 }
 
@@ -101,38 +104,38 @@ resource "azurerm_subnet" "lb" {
 
 # This is optional for resource modules
 resource "azurerm_subnet" "pe" {
-  address_prefixes     = ["10.0.3.0/24"]
-  name                 = module.naming_pe_subnet.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes                  = ["10.0.3.0/24"]
+  name                              = module.naming_pe_subnet.subnet.name_unique
+  resource_group_name               = azurerm_resource_group.this.name
+  virtual_network_name              = azurerm_virtual_network.this.name
   private_endpoint_network_policies = "Disabled"
 }
 
 # This is required for resource modules
 resource "azurerm_lb" "this" {
-  name                = module.naming.lb.name_unique
   location            = azurerm_resource_group.this.location
+  name                = module.naming.lb.name_unique
   resource_group_name = azurerm_resource_group.this.name
   sku                 = "Standard"
 
   frontend_ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.lb.id
     private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.lb.id
   }
 }
 
 # This is optional for resource modules
 resource "azurerm_private_endpoint" "this" {
-  name                = module.naming.private_endpoint.name_unique
   location            = azurerm_resource_group.this.location
+  name                = module.naming.private_endpoint.name_unique
   resource_group_name = azurerm_resource_group.this.name
   subnet_id           = azurerm_subnet.pe.id
 
   private_service_connection {
+    is_manual_connection           = false
     name                           = "pls-connection"
     private_connection_resource_id = module.azurerm_private_link_service.id
-    is_manual_connection           = false
   }
 }
 
@@ -140,18 +143,17 @@ module "avm-res-network-privatednszone" {
   source  = "Azure/avm-res-network-privatednszone/azurerm"
   version = "0.4.3"
 
-  domain_name           = "privatelink.provider"
-  parent_id             = azurerm_resource_group.this.id
-
+  domain_name = "privatelink.provider"
+  parent_id   = azurerm_resource_group.this.id
   a_records = {
     pls_alias = {
-      name                 = "azure"
-      ttl                  = 300
+      name         = "azure"
+      ttl          = 300
       ip_addresses = [azurerm_private_endpoint.this.private_service_connection[0].private_ip_address]
     }
   }
   virtual_network_links = {
-      vnetlink1 = {
+    vnetlink1 = {
       name                 = "my-vnet-link"
       virtual_network_id   = azurerm_virtual_network.this.id
       registration_enabled = true
@@ -164,14 +166,8 @@ module "avm-res-network-privatednszone" {
 module "azurerm_private_link_service" {
   source = "../.."
 
-  location              = azurerm_resource_group.this.location
-  name                  = module.naming.private_link_service.name_unique
-  resource_group_name   = azurerm_resource_group.this.name
-
-  load_balancer_frontend_ip_configuration_ids = [
-    azurerm_lb.this.frontend_ip_configuration[0].id
-  ]
-
+  location = azurerm_resource_group.this.location
+  name     = module.naming.private_link_service.name_unique
   nat_ip_configurations = [
     {
       name                       = "Primary"
@@ -179,6 +175,10 @@ module "azurerm_private_link_service" {
       primary                    = true
       private_ip_address_version = "IPv4"
     }
+  ]
+  resource_group_name = azurerm_resource_group.this.name
+  load_balancer_frontend_ip_configuration_ids = [
+    azurerm_lb.this.frontend_ip_configuration[0].id
   ]
 }
 ```

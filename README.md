@@ -97,11 +97,11 @@ Type:
 
 ```hcl
 list(object({
-    name                          = string
-    subnet_id                     = string
-    primary                       = bool
-    private_ip_address            = optional(string, null)
-    private_ip_address_version    = optional(string, null)
+    name                       = string
+    subnet_id                  = string
+    primary                    = bool
+    private_ip_address         = optional(string, null)
+    private_ip_address_version = optional(string, null)
   }))
 ```
 
