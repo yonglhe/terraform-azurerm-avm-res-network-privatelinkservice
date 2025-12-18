@@ -67,7 +67,7 @@ resource "azurerm_virtual_network" "this" {
 }
 
 # This is required for resource modules (subnet for Private Link Service)
-resource "azurerm_subnet" "pls" {
+resource "azurerm_subnet" "this" {
   address_prefixes                              = ["10.0.1.0/24"]
   name                                          = module.naming_pls_subnet.subnet.name_unique
   resource_group_name                           = azurerm_resource_group.this.name
@@ -90,7 +90,7 @@ module "azurerm_private_link_service" {
     }
   ]
   resource_group_name                                  = azurerm_resource_group.this.name
-  existing_load_balancer_frontend_ip_configuration_ids = [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
+  existing_load_balancer_frontend_ip_configuration_ids = [""]   # [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
   # Optional: add the [Load Balancer resource ID/Frontend IP configuraion ID]-link from the Azure Portal
-  existing_load_balancer_id = module.avm-res-network-loadbalancer.resource.id
+  existing_load_balancer_id = "" # module.avm-res-network-loadbalancer.resource.id
 }
