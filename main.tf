@@ -1,44 +1,46 @@
 resource "azurerm_lb" "this" {
-  count               = local.create_lb ? 1 : 0
-  name                = "${var.name}-lb"
+  count = local.create_lb ? 1 : 0
+
   location            = var.location
+  name                = "${var.name}-lb"
   resource_group_name = var.resource_group_name
   sku                 = "Standard"
+  tags                = var.tags
 
   dynamic "frontend_ip_configuration" {
     for_each = local.create_lb ? var.load_balancer_frontend_ip_configs : []
+
     content {
       name                 = frontend_ip_configuration.value.name
-      subnet_id            = frontend_ip_configuration.value.subnet_id
       private_ip_address   = frontend_ip_configuration.value.private_ip_address
       public_ip_address_id = frontend_ip_configuration.value.public_ip_address_id
+      subnet_id            = frontend_ip_configuration.value.subnet_id
     }
   }
-  tags = var.tags
 }
 
 resource "azurerm_private_link_service" "this" {
-  name                    = var.name
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  enable_proxy_protocol   = var.enable_proxy_protocol
-  tags                    = var.tags
+  # Final, validated LB frontend IDs
+  load_balancer_frontend_ip_configuration_ids = local.frontend_ids
+  location                                    = var.location
+  name                                        = var.name
+  resource_group_name                         = var.resource_group_name
+  auto_approval_subscription_ids              = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
+  enable_proxy_protocol                       = var.enable_proxy_protocol
+  tags                                        = var.tags
+  visibility_subscription_ids                 = var.visibility_subscription_ids != null ? var.visibility_subscription_ids : null
 
   dynamic nat_ip_configuration {
     for_each = var.nat_ip_configurations
+
     content {
-      name                          = nat_ip_configuration.value.name
-      subnet_id                     = nat_ip_configuration.value.subnet_id
-      primary                       = nat_ip_configuration.value.primary
-      private_ip_address            = nat_ip_configuration.value.private_ip_address
-      private_ip_address_version    = nat_ip_configuration.value.private_ip_address_version
+      name                       = nat_ip_configuration.value.name
+      primary                    = nat_ip_configuration.value.primary
+      subnet_id                  = nat_ip_configuration.value.subnet_id
+      private_ip_address         = nat_ip_configuration.value.private_ip_address
+      private_ip_address_version = nat_ip_configuration.value.private_ip_address_version
     }
   }
-    # Final, validated LB frontend IDs
-  load_balancer_frontend_ip_configuration_ids = local.frontend_ids
-
-  auto_approval_subscription_ids    = var.auto_approval_subscription_ids != null ? var.auto_approval_subscription_ids : null
-  visibility_subscription_ids       = var.visibility_subscription_ids != null ? var.visibility_subscription_ids : null
 }
 
 resource "azurerm_management_lock" "this" {

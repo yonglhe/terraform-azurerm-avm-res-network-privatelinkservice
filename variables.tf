@@ -1,3 +1,9 @@
+variable "location" {
+  type        = string
+  description = "(Required) Azure region were the resource should be deployed."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "(Required) The name of this resource"
@@ -20,30 +26,14 @@ variable "name" {
   }
 }
 
-variable "location" {
-  type        = string
-  description = "(Required) Azure region were the resource should be deployed."
-  nullable = false
-}
-
-variable "resource_group_name" {
-  type        = string
-  description = "(Required) The resource group where the resources will be deployed."
-}
-
 variable "nat_ip_configurations" {
   type = list(object({
-    name                          = string
-    subnet_id                     = string
-    primary                       = bool
-    private_ip_address            = optional(string, null)
-    private_ip_address_version    = optional(string, null)
+    name                       = string
+    subnet_id                  = string
+    primary                    = bool
+    private_ip_address         = optional(string, null)
+    private_ip_address_version = optional(string, null)
   }))
-
-  validation {
-    condition     = length(var.nat_ip_configurations) <= 8
-    error_message = "You can create a maximum of 8 NAT IP configurations."
-  }
   description = <<-DESCRIPTION
 (Required) List of NAT IP configuration blocks for the Private Link Service.
 This includes the following properties:
@@ -53,43 +43,99 @@ This includes the following properties:
 - subnet_id - (Required) The ID of the subnet for the private link service.
 - primary - (Required) Set this IP configurations as primary, changing this foces a new resource to be created.
 DESCRIPTION
+
+  validation {
+    condition     = length(var.nat_ip_configurations) <= 8
+    error_message = "You can create a maximum of 8 NAT IP configurations."
+  }
 }
 
-variable "load_balancer_frontend_ip_configs" {
-  type = list(object({
-    name                 = string
-    subnet_id            = optional(string)
-    private_ip_address   = optional(string)
-    public_ip_address_id = optional(string)
+variable "resource_group_name" {
+  type        = string
+  description = "(Required) The resource group where the resources will be deployed."
+}
+
+variable "auto_approval_subscription_ids" {
+  type        = list(string)
+  default     = []
+  description = "(Optional) A list of subscription IDs that will be automatically approved to connect to the Private Link Service."
+}
+
+variable "diagnostic_settings" {
+  type = map(object({
+    name                                     = optional(string, null)
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
+    metric_categories                        = optional(set(string), ["AllMetrics"])
+    log_analytics_destination_type           = optional(string, "Dedicated")
+    workspace_resource_id                    = optional(string, null)
+    storage_account_resource_id              = optional(string, null)
+    event_hub_authorization_rule_resource_id = optional(string, null)
+    event_hub_name                           = optional(string, null)
+    marketplace_partner_resource_id          = optional(string, null)
   }))
-  default = []
+  default     = {}
+  description = <<DESCRIPTION
+A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
+- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
+- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
+- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
+- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
+- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
+- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
+- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
+- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+DESCRIPTION
+  nullable    = false
+
   validation {
-  condition = (
-    # Option 1: existing LB + its frontend IDs
-    (
-      var.existing_load_balancer_id != null &&
-      length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
-    )
-    ||
-    # Option 2: module-created LB configs
-    (
-      length(var.load_balancer_frontend_ip_configs) > 0
-    )
-    ||
-    # Option 3: deprecated explicit frontend ID list
-    (
-      length(var.load_balancer_frontend_ip_configuration_ids) > 0
-    )
-  )
-  error_message = <<-EOF
-  (Required) You must provide one of the following:
-    1. (for existing load balancer)                         existing_load_balancer_id & existing_load_balancer_frontend_ip_configuration_ids
-    2. (for creating the load balancer inside the module)   load_balancer_frontend_ip_configs for a module-created load balancer
-    3. (for creating the load balancer outside the module)  load_balancer_frontend_ip_configuration_ids.
-  A Private Link Service requires exactly one load balancer frontend IP configuration in all Terraform-supported scenarios.
-  EOF
+    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
+    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
   }
-  description = "(Optional) To deploy the Standard Load balancer together with Private Link Service inside the module."
+  validation {
+    condition = alltrue(
+      [
+        for _, v in var.diagnostic_settings :
+        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
+      ]
+    )
+    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
+  }
+}
+
+variable "enable_proxy_protocol" {
+  type        = bool
+  default     = false
+  description = "(Optional) The support for the Proxy Protocol for te Private Link Service"
+}
+
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+  nullable    = false
+}
+
+variable "existing_load_balancer_frontend_ip_configuration_ids" {
+  type    = list(string)
+  default = []
+  # description = ""
+  description = <<-DESCRIPTION
+(Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id.
+*(for creating the load balancer inside the module) - load_balancer_frontend_ip_configs for a module-created load balancer
+DESCRIPTION
+
+  validation {
+    condition     = var.existing_load_balancer_id == null || length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
+    error_message = "If existing_load_balancer_id is provided, you must provide its frontend IP configuration IDs."
+  }
 }
 
 variable "existing_load_balancer_id" {
@@ -101,18 +147,41 @@ variable "existing_load_balancer_id" {
 DESCRIPTION
 }
 
-variable "existing_load_balancer_frontend_ip_configuration_ids" {
-  type        = list(string)
+variable "load_balancer_frontend_ip_configs" {
+  type = list(object({
+    name                 = string
+    subnet_id            = optional(string)
+    private_ip_address   = optional(string)
+    public_ip_address_id = optional(string)
+  }))
   default     = []
- # description = ""
-  description = <<-DESCRIPTION
-(Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id.
-*(for creating the load balancer inside the module) - load_balancer_frontend_ip_configs for a module-created load balancer
-DESCRIPTION
+  description = "(Optional) To deploy the Standard Load balancer together with Private Link Service inside the module."
 
   validation {
-    condition     = var.existing_load_balancer_id == null || length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
-    error_message = "If existing_load_balancer_id is provided, you must provide its frontend IP configuration IDs."
+    condition = (
+      # Option 1: existing LB + its frontend IDs
+      (
+        var.existing_load_balancer_id != null &&
+        length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
+      )
+      ||
+      # Option 2: module-created LB configs
+      (
+        length(var.load_balancer_frontend_ip_configs) > 0
+      )
+      ||
+      # Option 3: deprecated explicit frontend ID list
+      (
+        length(var.load_balancer_frontend_ip_configuration_ids) > 0
+      )
+    )
+    error_message = <<-EOF
+  (Required) You must provide one of the following:
+    1. (for existing load balancer)                         existing_load_balancer_id & existing_load_balancer_frontend_ip_configuration_ids
+    2. (for creating the load balancer inside the module)   load_balancer_frontend_ip_configs for a module-created load balancer
+    3. (for creating the load balancer outside the module)  load_balancer_frontend_ip_configuration_ids.
+  A Private Link Service requires exactly one load balancer frontend IP configuration in all Terraform-supported scenarios.
+  EOF
   }
 }
 
@@ -125,28 +194,23 @@ variable "load_balancer_frontend_ip_configuration_ids" {
 DESCRIPTION
 }
 
-variable "enable_proxy_protocol" {
-  description = "(Optional) The support for the Proxy Protocol for te Private Link Service"
-  type        = bool
-  default     = false
-}
-
-variable "auto_approval_subscription_ids" {
-  description = "(Optional) A list of subscription IDs that will be automatically approved to connect to the Private Link Service."
-  type        = list(string)
-  default     = []
-}
-
-variable "visibility_subscription_ids" {
-  description = "(Optional) A list of subscription IDs that have visibility to the Private Link Service"
-  type        = list(string)
-  default     = []
-}
-
-variable "tags" {
-  type        = map(string)
+variable "lock" {
+  type = object({
+    kind = string
+    name = optional(string, null)
+  })
   default     = null
-  description = "(Optional) Tags of the resource."
+  description = <<DESCRIPTION
+Controls the Resource Lock configuration for this resource. The following properties can be specified:
+
+- `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
+- `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
+DESCRIPTION
+
+  validation {
+    condition     = var.lock != null ? contains(["CanNotDelete", "ReadOnly"], var.lock.kind) : true
+    error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
+  }
 }
 
 variable "role_assignments" {
@@ -194,77 +258,14 @@ DESCRIPTION
   nullable    = false
 }
 
-variable "lock" {
-  type = object({
-    kind = string
-    name = optional(string, null)
-  })
+variable "tags" {
+  type        = map(string)
   default     = null
-  description = <<DESCRIPTION
-Controls the Resource Lock configuration for this resource. The following properties can be specified:
-
-- `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
-- `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
-DESCRIPTION
-
-  validation {
-    condition     = var.lock != null ? contains(["CanNotDelete", "ReadOnly"], var.lock.kind) : true
-    error_message = "The lock level must be one of: 'None', 'CanNotDelete', or 'ReadOnly'."
-  }
+  description = "(Optional) Tags of the resource."
 }
 
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-  nullable    = false
-}
-
-variable "diagnostic_settings" {
-  type = map(object({
-    name                                     = optional(string, null)
-    log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
-    metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
-    workspace_resource_id                    = optional(string, null)
-    storage_account_resource_id              = optional(string, null)
-    event_hub_authorization_rule_resource_id = optional(string, null)
-    event_hub_name                           = optional(string, null)
-    marketplace_partner_resource_id          = optional(string, null)
-  }))
-  default     = {}
-  description = <<DESCRIPTION
-A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
-- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
-- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
-- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
-- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
-- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
-- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
-- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
-- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-DESCRIPTION
-  nullable    = false
-
-  validation {
-    condition     = alltrue([for _, v in var.diagnostic_settings : contains(["Dedicated", "AzureDiagnostics"], v.log_analytics_destination_type)])
-    error_message = "Log analytics destination type must be one of: 'Dedicated', 'AzureDiagnostics'."
-  }
-  validation {
-    condition = alltrue(
-      [
-        for _, v in var.diagnostic_settings :
-        v.workspace_resource_id != null || v.storage_account_resource_id != null || v.event_hub_authorization_rule_resource_id != null || v.marketplace_partner_resource_id != null
-      ]
-    )
-    error_message = "At least one of `workspace_resource_id`, `storage_account_resource_id`, `marketplace_partner_resource_id`, or `event_hub_authorization_rule_resource_id`, must be set."
-  }
+variable "visibility_subscription_ids" {
+  type        = list(string)
+  default     = []
+  description = "(Optional) A list of subscription IDs that have visibility to the Private Link Service"
 }
