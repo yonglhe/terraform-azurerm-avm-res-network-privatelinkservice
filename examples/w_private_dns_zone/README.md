@@ -131,7 +131,7 @@ resource "azurerm_private_endpoint" "this" {
   private_service_connection {
     is_manual_connection           = false
     name                           = "pls-connection"
-    private_connection_resource_id = module.azurerm_private_link_service.id
+    private_connection_resource_id = module.azurerm_private_link_service.resource_id
   }
 }
 
