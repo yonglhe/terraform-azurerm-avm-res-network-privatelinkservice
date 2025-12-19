@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 5.0.0"
     }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3.0, < 4.0.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
@@ -25,7 +21,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.3.0"
+  version = "0.3.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -37,19 +33,21 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 }
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
-  prefix  = ["pls"] # <-- This makes the name unique
+  version = "0.4.2"
+
+  prefix = ["pls"] # <-- This makes the name unique
 }
 
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
-  prefix  = ["lb"]  # <-- This makes the name unique
+  version = "0.4.2"
+
+  prefix = ["lb"] # <-- This makes the name unique
 }
 
 # This is required for resource modules
@@ -68,10 +66,10 @@ resource "azurerm_virtual_network" "this" {
 
 # This is required for resource modules (subnet for Private Link Service)
 resource "azurerm_subnet" "pls" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming_pls_subnet.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes                              = ["10.0.1.0/24"]
+  name                                          = module.naming_pls_subnet.subnet.name_unique
+  resource_group_name                           = azurerm_resource_group.this.name
+  virtual_network_name                          = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
 }
 
@@ -87,23 +85,21 @@ resource "azurerm_subnet" "lb" {
 module "azurerm_private_link_service" {
   source = "../.."
 
-  location              = azurerm_resource_group.this.location
-  name                  = module.naming.private_link_service.name_unique
-  resource_group_name   = azurerm_resource_group.this.name
-
-  load_balancer_frontend_ip_configs = [
-    {
-      name     = "internal"
-      subnet_id = azurerm_subnet.lb.id
-    }
-  ]
-
+  location = azurerm_resource_group.this.location
+  name     = module.naming.private_link_service.name_unique
   nat_ip_configurations = [
     {
       name                       = "Primary"
       subnet_id                  = azurerm_subnet.pls.id
       primary                    = true
       private_ip_address_version = "IPv4"
+    }
+  ]
+  resource_group_name = azurerm_resource_group.this.name
+  load_balancer_frontend_ip_configs = [
+    {
+      name      = "internal"
+      subnet_id = azurerm_subnet.lb.id
     }
   ]
 }

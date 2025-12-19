@@ -13,10 +13,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.7.0, < 5.0.0"
     }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3.0, < 4.0.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = ">= 3.5.0, < 4.0.0"
@@ -32,7 +28,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "~> 0.3.0"
+  version = "0.3.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -44,21 +40,23 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
+  version = "0.4.2"
 }
 
 # Naming module specifically for the "pls" subnet
 module "naming_pls_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
-  prefix  = ["pls"] # <-- This makes the name unique
+  version = "0.4.2"
+
+  prefix = ["pls"] # <-- This makes the name unique
 }
 
 # Naming module specifically for the "lb" subnet
 module "naming_lb_subnet" {
   source  = "Azure/naming/azurerm"
-  version = "~> 0.4.2"
-  prefix  = ["lb"]  # <-- This makes the name unique
+  version = "0.4.2"
+
+  prefix = ["lb"] # <-- This makes the name unique
 }
 
 # This is required for resource modules
@@ -76,26 +74,45 @@ resource "azurerm_virtual_network" "this" {
 }
 
 # This is required for resource modules (subnet for Private Link Service)
-resource "azurerm_subnet" "pls" {
-  address_prefixes     = ["10.0.1.0/24"]
-  name                 = module.naming_pls_subnet.subnet.name_unique
-  resource_group_name  = azurerm_resource_group.this.name
-  virtual_network_name = azurerm_virtual_network.this.name
+resource "azurerm_subnet" "this" {
+  address_prefixes                              = ["10.0.1.0/24"]
+  name                                          = module.naming_pls_subnet.subnet.name_unique
+  resource_group_name                           = azurerm_resource_group.this.name
+  virtual_network_name                          = azurerm_virtual_network.this.name
   private_link_service_network_policies_enabled = false
 }
+
+# NOTE:
+# The following resources are used for end-to-end testing only.
+# The referenced Standard Load Balancer resource is created as the default examples
+# Terraform configuration to allow deterministic CI testing.
+resource "azurerm_subnet" "lb" {
+  address_prefixes     = ["10.0.2.0/24"]
+  name                 = module.naming_lb_subnet.subnet.name_unique
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
+}
+
+resource "azurerm_lb" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = module.naming.lb.name_unique
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                          = "internal"
+    private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.lb.id
+  }
+}
+# END OF NOTE
 
 # This is the module call
 module "azurerm_private_link_service" {
   source = "../.."
 
-  location              = azurerm_resource_group.this.location
-  name                  = module.naming.private_link_service.name_unique
-  resource_group_name   = azurerm_resource_group.this.name
-
-  # Optional: add the [Load Balancer resource ID/Frontend IP configuraion ID]-link from the Azure Portal
-  existing_load_balancer_id = module.avm-res-network-loadbalancer.resource.id
-  existing_load_balancer_frontend_ip_configuration_ids = [module.avm-res-network-loadbalancer.resource.frontend_ip_configuration[0].id]
-
+  location = azurerm_resource_group.this.location
+  name     = module.naming.private_link_service.name_unique
   nat_ip_configurations = [
     {
       name                       = "Primary"
@@ -104,7 +121,11 @@ module "azurerm_private_link_service" {
       private_ip_address_version = "IPv4"
     }
   ]
-  depends_on = [azurerm_lb.this]
+  resource_group_name = azurerm_resource_group.this.name
+  # Add the Load Balancer resource ID and Frontend IP configuraion ID -URL from the Azure Portal
+  # For Example: /subscriptions/../resourceGroups/../providers/Microsoft.Network/loadBalancers/..
+  existing_load_balancer_frontend_ip_configuration_ids = [azurerm_lb.this.frontend_ip_configuration[0].id] # Replace with Frontend IP configuration Resource ID
+  existing_load_balancer_id                            = azurerm_lb.this.id                                # Replace with Load Balancer Resource ID
 }
 ```
 
@@ -117,16 +138,16 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.7.0, < 5.0.0)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3.0, < 4.0.0)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
 ## Resources
 
 The following resources are used by this module:
 
+- [azurerm_lb.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/lb) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_subnet.pls](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_subnet.lb](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
@@ -157,25 +178,25 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_naming_lb_subnet"></a> [naming\_lb\_subnet](#module\_naming\_lb\_subnet)
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_naming_pls_subnet"></a> [naming\_pls\_subnet](#module\_naming\_pls\_subnet)
 
 Source: Azure/naming/azurerm
 
-Version: ~> 0.4.2
+Version: 0.4.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: ~> 0.3.0
+Version: 0.3.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
