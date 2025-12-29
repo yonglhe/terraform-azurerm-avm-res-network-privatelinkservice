@@ -169,29 +169,14 @@ variable "load_balancer_frontend_ip_configs" {
       (
         length(var.load_balancer_frontend_ip_configs) > 0
       )
-      ||
-      # Option 3: deprecated explicit frontend ID list
-      (
-        length(var.load_balancer_frontend_ip_configuration_ids) > 0
-      )
     )
     error_message = <<-EOF
   (Required) You must provide one of the following:
     1. (for existing load balancer)                         existing_load_balancer_id & existing_load_balancer_frontend_ip_configuration_ids
     2. (for creating the load balancer inside the module)   load_balancer_frontend_ip_configs for a module-created load balancer
-    3. (for creating the load balancer outside the module)  load_balancer_frontend_ip_configuration_ids.
   A Private Link Service requires exactly one load balancer frontend IP configuration in all Terraform-supported scenarios.
   EOF
   }
-}
-
-variable "load_balancer_frontend_ip_configuration_ids" {
-  type        = list(string)
-  default     = []
-  description = <<-DESCRIPTION
-(Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported). The variable type is still a list but it only accepts one.
-*(for creating the load balancer outside the module) - load_balancer_frontend_ip_configuration_ids.
-DESCRIPTION
 }
 
 variable "lock" {
