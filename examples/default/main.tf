@@ -99,6 +99,7 @@ resource "azurerm_lb" "this" {
 # This is the module call
 module "azurerm_private_link_service" {
   source = "../.."
+  # source = "git::git@github.com:yonglhe/terraform-azurerm-avm-res-network-privatelinkservice.git"
 
   location = azurerm_resource_group.this.location
   name     = module.naming.private_link_service.name_unique
