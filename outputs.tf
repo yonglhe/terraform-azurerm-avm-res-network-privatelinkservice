@@ -8,7 +8,7 @@ output "auto_approval_subscription_ids" {
   value       = azurerm_private_link_service.this.auto_approval_subscription_ids
 }
 
-output "load_balancer_frontend_ip_configuration_ids" {
+output "existing_load_balancer_frontend_ip_configuration_ids" {
   description = "The frontend IP configuration IDs used by the Private Link Service."
   value       = local.frontend_ids
 }
