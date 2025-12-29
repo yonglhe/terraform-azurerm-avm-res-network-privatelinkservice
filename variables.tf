@@ -126,15 +126,23 @@ DESCRIPTION
 variable "existing_load_balancer_frontend_ip_configuration_ids" {
   type    = list(string)
   default = []
-  # description = ""
   description = <<-DESCRIPTION
 (Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing_load_balancer_id.
-*(for creating the load balancer inside the module) - load_balancer_frontend_ip_configs for a module-created load balancer
+Only **one** frontend IP configuration is supported by Azure Private Link Service.
 DESCRIPTION
 
-  validation {
-    condition     = var.existing_load_balancer_id == null || length(var.existing_load_balancer_frontend_ip_configuration_ids) > 0
-    error_message = "If existing_load_balancer_id is provided, you must provide its frontend IP configuration IDs."
+validation {
+    condition = (
+      # If no existing LB is provided, this must be empty
+      var.existing_load_balancer_id == null
+      ? length(var.existing_load_balancer_frontend_ip_configuration_ids) == 0
+      # If an existing LB is provided, exactly ONE frontend ID is required
+      : length(var.existing_load_balancer_frontend_ip_configuration_ids) == 1
+    )
+    error_message = <<-EOT
+When `existing_load_balancer_id` is set, exactly ONE frontend IP configuration ID
+must be provided in `existing_load_balancer_frontend_ip_configuration_ids`.
+EOT
   }
 }
 
