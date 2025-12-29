@@ -110,6 +110,7 @@ resource "azurerm_lb" "this" {
 # This is the module call
 module "azurerm_private_link_service" {
   source = "../.."
+  # source = "git::git@github.com:yonglhe/terraform-azurerm-avm-res-network-privatelinkservice.git"
 
   location = azurerm_resource_group.this.location
   name     = module.naming.private_link_service.name_unique
@@ -122,10 +123,14 @@ module "azurerm_private_link_service" {
     }
   ]
   resource_group_name = azurerm_resource_group.this.name
-  # Add the Load Balancer resource ID and Frontend IP configuraion ID -URL from the Azure Portal
-  # For Example: /subscriptions/../resourceGroups/../providers/Microsoft.Network/loadBalancers/..
-  existing_load_balancer_frontend_ip_configuration_ids = [azurerm_lb.this.frontend_ip_configuration[0].id] # Replace with Frontend IP configuration Resource ID
-  existing_load_balancer_id                            = azurerm_lb.this.id                                # Replace with Load Balancer Resource ID
+  # Two options to use this:
+    # Option 1: Add the Load Balancer resource ID and Frontend IP configuraion ID -URL from the Azure Portal
+    # For example: /subscriptions/../resourceGroups/../providers/Microsoft.Network/loadBalancers/..
+    # Option 2: Add the input for the Load Balancer resource ID and Frontend IP configuraion ID
+    # For example: see below
+
+  existing_load_balancer_frontend_ip_configuration_ids = [azurerm_lb.this.frontend_ip_configuration[0].id]
+  existing_load_balancer_id                            = azurerm_lb.this.id
 }
 ```
 

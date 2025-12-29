@@ -8,10 +8,16 @@ Module to deploy a Private Link Service in Terraform
 
 A Private Link Service **requires** a Standard Load Balancer frontend IP configuration. This module supports the following mutually exclusive options (exactly **one** option must be used.):
 
-#### Option 1 – Resource Load Balancer (Default)
-Description: The module will attach the created separate Standard Load Balancer
+#### Option 1 – Resource Load Balancer (Default) OR Existing Load Balancer
+Description: The module will attach the created separate Standard Load Balancer or the module will attach the Private Link Service to the existing Load Balancer.
 - Provide `load_balancer_frontend_ip_configuration_ids` directly.
+Type: `list(string)`
 
+OR
+- Provide:
+  - `existing_load_balancer_id`
+Type: `string`
+  - `existing_load_balancer_frontend_ip_configuration_ids`
 Type: `list(string)`
 
 #### Option 2 – Module-created built-in Load Balancer (Recommended)
@@ -28,14 +34,6 @@ list(object({
     public_ip_address_id = optional(string)
   }))
 ```
-
-#### Option 3 – Existing Load Balancer
-Description: The module will attach the Private Link Service to the existing Load Balancer.
-Provide:
-- `existing_load_balancer_id`
-Type: `string`
-- `existing_load_balancer_frontend_ip_configuration_ids`
-Type: `list(string)`
 
 <!-- markdownlint-disable MD033 -->
 ## Requirements
@@ -177,8 +175,8 @@ Default: `true`
 
 ### <a name="input_existing_load_balancer_frontend_ip_configuration_ids"></a> [existing\_load\_balancer\_frontend\_ip\_configuration\_ids](#input\_existing\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
-Description: (Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing\_load\_balancer\_id.
-*(for creating the load balancer inside the module) - load\_balancer\_frontend\_ip\_configs for a module-created load balancer
+Description: (Optional) Frontend IP configuration IDs belonging to the existing load balancer provided in existing\_load\_balancer\_id.  
+Only **one** frontend IP configuration is supported by Azure Private Link Service.
 
 Type: `list(string)`
 
@@ -207,15 +205,6 @@ list(object({
     public_ip_address_id = optional(string)
   }))
 ```
-
-Default: `[]`
-
-### <a name="input_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#input\_load\_balancer\_frontend\_ip\_configuration\_ids)
-
-Description: (Optional) One Load Balancer Frontend IP Configuration IDs associated with the Private Link Service (ONLY ONE, more are not supported). The variable type is still a list but it only accepts one.
-*(for creating the load balancer outside the module) - load\_balancer\_frontend\_ip\_configuration\_ids.
-
-Type: `list(string)`
 
 Default: `[]`
 
@@ -313,7 +302,7 @@ Description: The alias of the Private Link Service.
 
 Description: The list of subscription IDs that have auto approval to the Private Link Service.
 
-### <a name="output_load_balancer_frontend_ip_configuration_ids"></a> [load\_balancer\_frontend\_ip\_configuration\_ids](#output\_load\_balancer\_frontend\_ip\_configuration\_ids)
+### <a name="output_existing_load_balancer_frontend_ip_configuration_ids"></a> [existing\_load\_balancer\_frontend\_ip\_configuration\_ids](#output\_existing\_load\_balancer\_frontend\_ip\_configuration\_ids)
 
 Description: The frontend IP configuration IDs used by the Private Link Service.
 

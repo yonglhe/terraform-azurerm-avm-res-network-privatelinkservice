@@ -106,6 +106,7 @@ resource "azurerm_lb" "this" {
 # This is the module call
 module "azurerm_private_link_service" {
   source = "../.."
+  # source = "git::git@github.com:yonglhe/terraform-azurerm-avm-res-network-privatelinkservice.git"
 
   location = azurerm_resource_group.this.location
   name     = module.naming.private_link_service.name_unique
@@ -118,9 +119,8 @@ module "azurerm_private_link_service" {
     }
   ]
   resource_group_name = azurerm_resource_group.this.name
-  load_balancer_frontend_ip_configuration_ids = [
-    azurerm_lb.this.frontend_ip_configuration[0].id
-  ]
+  existing_load_balancer_id                            = azurerm_lb.this.id
+  existing_load_balancer_frontend_ip_configuration_ids = [azurerm_lb.this.frontend_ip_configuration[0].id]
 }
 ```
 
